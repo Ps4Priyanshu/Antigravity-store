@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FocusFlow — Smart Productivity Dashboard</title>
+  <meta name="description" content="FocusFlow helps students manage tasks, habits, study sessions, and productivity from one premium dashboard." />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- ==================== SIDEBAR ==================== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">F</div>
+      <div class="sidebar-brand">
+        <h1>FocusFlow</h1>
+        <span>Productivity Suite</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Menu</div>
+
+      <div class="nav-item active" data-page="dashboard" id="nav-dashboard">
+        <span class="nav-icon">📊</span>
+        <span>Dashboard</span>
+      </div>
+
+      <div class="nav-item" data-page="tasks" id="nav-tasks">
+        <span class="nav-icon">✅</span>
+        <span>Tasks</span>
+        <span class="nav-badge" id="tasks-badge">0</span>
+      </div>
+
+      <div class="nav-item" data-page="habits" id="nav-habits">
+        <span class="nav-icon">🔄</span>
+        <span>Habits</span>
+      </div>
+
+      <div class="nav-item" data-page="timer" id="nav-timer">
+        <span class="nav-icon">⏱️</span>
+        <span>Focus Timer</span>
+      </div>
+
+      <div class="nav-item" data-page="planner" id="nav-planner">
+        <span class="nav-icon">📅</span>
+        <span>Study Planner</span>
+      </div>
+
+      <div class="nav-section-label" style="margin-top: var(--space-md);">Quick Links</div>
+
+      <div class="nav-item" data-page="settings" id="nav-settings">
+        <span class="nav-icon">⚙️</span>
+        <span>Settings</span>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user" onclick="navigateTo('settings')">
+        <div class="user-avatar" id="sidebarAvatar">S</div>
+        <div class="user-info">
+          <span class="user-name" id="sidebarUsername">Student</span>
+          <span class="user-plan">Free Plan</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mobile overlay -->
+  <div class="mobile-overlay" id="mobileOverlay"></div>
+
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main class="main-content">
+
+    <!-- Page Header -->
+    <header class="page-header">
+      <div class="page-header-left">
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">☰</button>
+        <div>
+          <h2 class="page-title" id="pageTitle">Dashboard</h2>
+          <p class="page-subtitle" id="pageSubtitle">Welcome back! Here's your productivity overview.</p>
+        </div>
+      </div>
+      <div class="page-header-right">
+        <button class="btn btn-secondary btn-sm" id="headerDateBtn">
+          <span id="headerDate"></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Page Body -->
+    <div class="page-body">
+
+      <!-- ========== DASHBOARD ========== -->
+      <section class="page-view active" id="page-dashboard">
+
+        <!-- Hero Welcome Banner -->
+        <div class="dash-hero">
+          <div class="dash-hero-glow"></div>
+          <div class="dash-hero-content">
+            <div class="dash-hero-left">
+              <p class="dash-hero-eyebrow" id="dashHeroDate"></p>
+              <h1 class="dash-hero-title">
+                Good <span id="greetingTime">morning</span>, <span id="greetingUsername">Student</span>
+                <span class="wave">👋</span>
+              </h1>
+              <p class="dash-hero-sub">
+                You have <strong id="dashPendingCount">0</strong> pending tasks
+                and <strong id="dashFocusToday">0</strong> focus sessions completed today.
+              </p>
+              <div class="dash-hero-actions">
+                <button class="btn btn-primary btn-glow" onclick="navigateTo('tasks'); setTimeout(() => toggleAddTaskForm(), 100);">
+                  <span>＋</span> New Task
+                </button>
+                <button class="btn btn-glass" onclick="navigateTo('timer')">
+                  <span>⏱</span> Start Focus
+                </button>
+                <button class="btn btn-glass" onclick="navigateTo('planner')">
+                  <span>📅</span> Plan Week
+                </button>
+              </div>
+            </div>
+
+            <!-- Productivity Score Ring -->
+            <div class="dash-hero-right">
+              <div class="productivity-ring-wrapper">
+                <svg class="productivity-ring" viewBox="0 0 140 140">
+                  <defs>
+                    <linearGradient id="prodGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style="stop-color:#7c5cfc" />
+                      <stop offset="50%" style="stop-color:#4da6ff" />
+                      <stop offset="100%" style="stop-color:#34d399" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="70" cy="70" r="60" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8" />
+                  <circle id="prodRingProgress" cx="70" cy="70" r="60" fill="none"
+                          stroke="url(#prodGrad)" stroke-width="8" stroke-linecap="round"
+                          stroke-dasharray="376.99" stroke-dashoffset="376.99"
+                          transform="rotate(-90 70 70)"
+                          style="filter: drop-shadow(0 0 10px rgba(124,92,252,0.5)); transition: stroke-dashoffset 1s ease;" />
+                </svg>
+                <div class="productivity-ring-inner">
+                  <span class="productivity-score" id="prodScoreValue">0</span>
+                  <span class="productivity-label">Score</span>
+                </div>
+              </div>
+              <p class="productivity-caption" id="prodCaption">Complete tasks & habits to boost your score</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metric Cards Row -->
+        <div class="dash-metrics">
+          <div class="metric-card" id="metricTasksToday">
+            <div class="metric-icon-wrap green"><span>✅</span></div>
+            <div class="metric-body">
+              <span class="metric-value" id="statCompletedToday">0</span>
+              <span class="metric-label">Tasks Today</span>
+            </div>
+            <div class="metric-sparkline" id="sparkTasks"></div>
+          </div>
+
+          <div class="metric-card" id="metricStreak">
+            <div class="metric-icon-wrap amber"><span>🔥</span></div>
+            <div class="metric-body">
+              <span class="metric-value" id="statStreak">0</span>
+              <span class="metric-label">Day Streak</span>
+            </div>
+            <div class="metric-trend positive" id="streakTrend">
+              <span>↑</span> Active
+            </div>
+          </div>
+
+          <div class="metric-card" id="metricStudy">
+            <div class="metric-icon-wrap purple"><span>📖</span></div>
+            <div class="metric-body">
+              <span class="metric-value" id="statStudyHours">0h</span>
+              <span class="metric-label">Study Hours</span>
+            </div>
+            <div class="metric-sparkline" id="sparkStudy"></div>
+          </div>
+
+          <div class="metric-card" id="metricHabits">
+            <div class="metric-icon-wrap cyan"><span>🎯</span></div>
+            <div class="metric-body">
+              <span class="metric-value" id="statHabitRate">0%</span>
+              <span class="metric-label">Habit Rate</span>
+            </div>
+            <div class="metric-mini-ring" id="habitMiniRing">
+              <svg viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="3"/>
+                <circle id="habitMiniProgress" cx="18" cy="18" r="14" fill="none"
+                        stroke="var(--accent-cyan)" stroke-width="3" stroke-linecap="round"
+                        stroke-dasharray="87.96" stroke-dashoffset="87.96"
+                        transform="rotate(-90 18 18)"
+                        style="transition: stroke-dashoffset 0.8s ease;"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Dashboard Grid -->
+        <div class="dash-grid">
+          <!-- Weekly Activity Chart -->
+          <div class="dash-card dash-card-wide" id="activityCard">
+            <div class="dash-card-header">
+              <div>
+                <h3 class="dash-card-title">Weekly Activity</h3>
+                <p class="dash-card-subtitle">Your productivity over the last 7 days</p>
+              </div>
+              <div class="dash-card-badge">
+                <span class="badge badge-purple">This Week</span>
+              </div>
+            </div>
+            <div class="activity-chart" id="activityChart">
+              <div class="activity-chart-bars" id="activityBars"></div>
+              <div class="activity-chart-labels" id="activityLabels"></div>
+            </div>
+          </div>
+
+          <!-- Study Hours Card -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <div>
+                <h3 class="dash-card-title">Study Hours</h3>
+                <p class="dash-card-subtitle">Focus sessions breakdown</p>
+              </div>
+            </div>
+            <div class="study-hours-display">
+              <div class="study-hours-big" id="studyHoursBig">0h 0m</div>
+              <p class="study-hours-label">Total this week (Goal: <span id="studyHoursGoal">15</span>h)</p>
+            </div>
+            <div class="study-hours-breakdown" id="studyBreakdown">
+              <div class="study-row">
+                <span class="study-row-dot" style="background:var(--accent-primary)"></span>
+                <span class="study-row-label">Today</span>
+                <span class="study-row-value" id="studyToday">0m</span>
+              </div>
+              <div class="study-row">
+                <span class="study-row-dot" style="background:var(--accent-blue)"></span>
+                <span class="study-row-label">This week</span>
+                <span class="study-row-value" id="studyWeek">0m</span>
+              </div>
+              <div class="study-row">
+                <span class="study-row-dot" style="background:var(--accent-cyan)"></span>
+                <span class="study-row-label">Sessions</span>
+                <span class="study-row-value" id="studySessions">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Habit Completion Card -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <div>
+                <h3 class="dash-card-title">Habit Completion</h3>
+                <p class="dash-card-subtitle">Today's progress</p>
+              </div>
+              <span class="section-action" onclick="navigateTo('habits')">View All →</span>
+            </div>
+            <div class="habit-completion-ring-wrap">
+              <svg class="habit-completion-ring" viewBox="0 0 120 120">
+                <defs>
+                  <linearGradient id="habitGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#22d3ee" />
+                    <stop offset="100%" style="stop-color:#7c5cfc" />
+                  </linearGradient>
+                </defs>
+                <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="7"/>
+                <circle id="habitRingProgress" cx="60" cy="60" r="50" fill="none"
+                        stroke="url(#habitGrad)" stroke-width="7" stroke-linecap="round"
+                        stroke-dasharray="314.16" stroke-dashoffset="314.16"
+                        transform="rotate(-90 60 60)"
+                        style="filter: drop-shadow(0 0 8px rgba(34,211,238,0.4)); transition: stroke-dashoffset 1s ease;"/>
+              </svg>
+              <div class="habit-completion-inner">
+                <span class="habit-completion-pct" id="habitCompletionPct">0%</span>
+                <span class="habit-completion-label">Done today</span>
+              </div>
+            </div>
+            <div class="habit-completion-list" id="habitCompletionList">
+              <p class="dash-empty-text">No habits tracked yet</p>
+            </div>
+          </div>
+
+          <!-- Recent Tasks -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <div>
+                <h3 class="dash-card-title">Recent Tasks</h3>
+                <p class="dash-card-subtitle">Your latest task activity</p>
+              </div>
+              <span class="section-action" onclick="navigateTo('tasks')">View All →</span>
+            </div>
+            <div class="dash-task-list" id="dashRecentTasks">
+              <p class="dash-empty-text">No tasks yet. Add your first task!</p>
+            </div>
+          </div>
+
+          <!-- Today's Schedule -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <div>
+                <h3 class="dash-card-title">Today's Schedule</h3>
+                <p class="dash-card-subtitle">Upcoming events & sessions</p>
+              </div>
+              <span class="section-action" onclick="navigateTo('planner')">Full Planner →</span>
+            </div>
+            <div class="dash-schedule-list" id="dashTodaySchedule">
+              <p class="dash-empty-text">No events scheduled for today</p>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ========== TASKS ========== -->
+      <section class="page-view" id="page-tasks">
+        <div class="tasks-toolbar">
+          <div class="filter-tabs" id="taskFilters">
+            <div class="filter-tab active" data-filter="all">All</div>
+            <div class="filter-tab" data-filter="pending">Pending</div>
+            <div class="filter-tab" data-filter="completed">Completed</div>
+            <div class="filter-tab" data-filter="high">High Priority</div>
+          </div>
+          <div style="flex:1;"></div>
+          <div class="input-group" style="min-width: 220px; max-width: 300px;">
+            <span class="input-icon">🔍</span>
+            <input class="input input-with-icon" type="text" id="taskSearchInput" placeholder="Search tasks..." oninput="handleTaskSearch()" />
+          </div>
+          <button class="btn btn-primary" id="addTaskBtn" onclick="toggleAddTaskForm()">➕ New Task</button>
+        </div>
+
+        <div class="add-task-form" id="addTaskForm">
+          <input class="input" type="text" id="taskTitleInput" placeholder="What needs to be done?" autofocus />
+          <div class="form-row">
+            <select class="select" id="taskPriorityInput" style="flex:1;">
+              <option value="low">Low Priority</option>
+              <option value="medium" selected>Medium Priority</option>
+              <option value="high">High Priority</option>
+            </select>
+            <select class="select" id="taskCategoryInput" style="flex:1;">
+              <option value="general">General</option>
+              <option value="study">Study</option>
+              <option value="project">Project</option>
+              <option value="personal">Personal</option>
+            </select>
+            <input class="input" type="date" id="taskDueInput" style="flex:1;" />
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-secondary" onclick="toggleAddTaskForm()">Cancel</button>
+            <button class="btn btn-primary" onclick="addTask()">Add Task</button>
+          </div>
+        </div>
+
+        <div class="task-list" id="taskList"></div>
+      </section>
+
+      <!-- ========== HABITS ========== -->
+      <section class="page-view" id="page-habits">
+        <div class="habits-grid" id="habitsGrid">
+          <div class="add-habit-card" id="addHabitCard" onclick="openHabitModal()">
+            <div class="add-icon">+</div>
+            <span style="font-weight:600;">Add New Habit</span>
+            <span style="font-size:12px;">Track daily routines & build consistency</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== FOCUS TIMER ========== -->
+      <section class="page-view" id="page-timer">
+        <div class="timer-container">
+          <div class="timer-modes">
+            <div class="timer-mode active" data-mode="focus" onclick="setTimerMode(this)">Focus</div>
+            <div class="timer-mode" data-mode="short-break" onclick="setTimerMode(this)">Short Break</div>
+            <div class="timer-mode" data-mode="long-break" onclick="setTimerMode(this)">Long Break</div>
+          </div>
+
+          <div class="timer-display">
+            <svg class="timer-ring" viewBox="0 0 120 120">
+              <defs>
+                <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style="stop-color:#7c5cfc" />
+                  <stop offset="100%" style="stop-color:#4da6ff" />
+                </linearGradient>
+              </defs>
+              <circle class="timer-ring-bg" cx="60" cy="60" r="54" />
+              <circle class="timer-ring-progress" id="timerProgress" cx="60" cy="60" r="54"
+                      stroke-dasharray="339.292" stroke-dashoffset="0" />
+            </svg>
+            <div class="timer-text">
+              <div class="timer-time" id="timerDisplay">25:00</div>
+              <div class="timer-label" id="timerModeLabel">Focus Session</div>
+            </div>
+          </div>
+
+          <div class="timer-controls">
+            <button class="timer-btn timer-btn-secondary" onclick="resetTimer()" title="Reset">⟲</button>
+            <button class="timer-btn timer-btn-primary" id="timerStartBtn" onclick="toggleTimer()">▶</button>
+            <button class="timer-btn timer-btn-secondary" onclick="skipTimer()" title="Skip">⏭</button>
+          </div>
+
+          <div class="timer-stats">
+            <div class="timer-stat">
+              <div class="timer-stat-value" id="timerTodaySessions">0</div>
+              <div class="timer-stat-label">Sessions</div>
+            </div>
+            <div class="timer-stat">
+              <div class="timer-stat-value" id="timerTodayMinutes">0m</div>
+              <div class="timer-stat-label">Focus Time</div>
+            </div>
+            <div class="timer-stat">
+              <div class="timer-stat-value" id="timerTotalSessions">0</div>
+              <div class="timer-stat-label">All Time</div>
+            </div>
+          </div>
+
+          <div class="sessions-section">
+            <div class="section-header">
+              <h3 class="section-title">Recent Sessions</h3>
+            </div>
+            <div id="sessionsList">
+              <div class="empty-state" style="padding: var(--space-lg);">
+                <p style="font-size: 13px;">No sessions yet. Start your first focus session!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== STUDY PLANNER ========== -->
+      <section class="page-view" id="page-planner">
+        <div class="planner-layout">
+          <div class="planner-dashboard">
+            <div class="planner-card card" id="examsCard">
+              <div class="card-header" style="margin-bottom: var(--space-sm);">
+                <div>
+                  <h3 class="card-title"><span>📝</span> Exams & Goals</h3>
+                  <p class="card-meta" style="margin-top: 2px;">Subject exams & goals countdown</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="openExamModal()">＋ Add Exam</button>
+              </div>
+              <div class="exams-list" id="examsList">
+                <p class="dash-empty-text">No exams added yet</p>
+              </div>
+            </div>
+            <div class="planner-card card" id="targetsCard">
+              <div class="card-header" style="margin-bottom: var(--space-sm);">
+                <div>
+                  <h3 class="card-title"><span>🎯</span> Weekly Targets</h3>
+                  <p class="card-meta" style="margin-top: 2px;">Checklist of goals this week</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="openTargetModal()">＋ Add Target</button>
+              </div>
+              <div class="targets-list" id="targetsList">
+                <p class="dash-empty-text">No targets tracked yet</p>
+              </div>
+            </div>
+            <div class="planner-card card" id="remindersCard">
+              <div class="card-header" style="margin-bottom: var(--space-sm);">
+                <div>
+                  <h3 class="card-title"><span>🔁</span> Revision Reminders</h3>
+                  <p class="card-meta" style="margin-top: 2px;">Automated revision schedule</p>
+                </div>
+              </div>
+              <div class="reminders-list" id="remindersList">
+                <p class="dash-empty-text">No reminders scheduled</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="planner-calendar-section card" style="margin-top: var(--space-lg); border-radius: var(--radius-xl);">
+            <div class="planner-toolbar" style="margin-bottom: var(--space-md); border-bottom: none; padding: 0;">
+              <div>
+                <h3 class="card-title"><span>📅</span> Daily Study Schedule</h3>
+                <p class="card-meta" style="margin-top: 2px;">Plan daily calendar study sessions</p>
+              </div>
+              <div style="flex:1;"></div>
+              <div class="week-nav">
+                <button class="week-nav-btn" onclick="changeWeek(-1)">←</button>
+                <span class="week-label" id="weekLabel"></span>
+                <button class="week-nav-btn" onclick="changeWeek(1)">→</button>
+              </div>
+              <button class="btn btn-primary" onclick="openEventModal()">➕ Add Event</button>
+            </div>
+            <div class="planner-grid" id="plannerGrid"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SETTINGS ========== -->
+      <section class="page-view" id="page-settings">
+        <div class="settings-grid">
+          <div class="settings-card card">
+            <div class="card-header">
+              <h3 class="card-title"><span>👤</span> User Profile</h3>
+            </div>
+            <div class="settings-form">
+              <div class="form-group">
+                <label for="settingsUsername">Display Name</label>
+                <input class="input" type="text" id="settingsUsername" placeholder="Enter your name" />
+              </div>
+              <div class="form-group">
+                <label for="settingsInitials">Avatar Initials</label>
+                <input class="input" type="text" id="settingsInitials" placeholder="e.g. S" maxlength="3" />
+              </div>
+              <button class="btn btn-primary" onclick="saveProfileSettings()">Save Profile</button>
+            </div>
+          </div>
+          <div class="settings-card card">
+            <div class="card-header">
+              <h3 class="card-title"><span>🎯</span> Weekly Goal</h3>
+            </div>
+            <div class="settings-form">
+              <div class="form-group">
+                <label for="settingsWeeklyGoal">Weekly Study Target (Hours)</label>
+                <input class="input" type="number" id="settingsWeeklyGoal" min="1" max="168" placeholder="e.g. 15" />
+              </div>
+              <button class="btn btn-primary" onclick="saveGoalSettings()">Save Goal</button>
+            </div>
+          </div>
+          <div class="settings-card card">
+            <div class="card-header">
+              <h3 class="card-title"><span>⏱️</span> Pomodoro Timer</h3>
+            </div>
+            <div class="settings-form">
+              <div class="form-row">
+                <div class="form-group" style="flex: 1;">
+                  <label for="settingsFocusTime">Focus (min)</label>
+                  <input class="input" type="number" id="settingsFocusTime" min="1" max="180" />
+                </div>
+                <div class="form-group" style="flex: 1;">
+                  <label for="settingsShortBreak">Short/Long Break (min)</label>
+                  <div class="form-row" style="gap: var(--space-sm);">
+                    <input class="input" type="number" id="settingsShortBreak" min="1" max="60" style="padding: 10px 8px;" />
+                    <input class="input" type="number" id="settingsLongBreak" min="1" max="120" style="padding: 10px 8px;" />
+                  </div>
+                </div>
+              </div>
+              <button class="btn btn-primary" onclick="saveTimerSettings()">Save Presets</button>
+            </div>
+          </div>
+          <div class="settings-card card">
+            <div class="card-header">
+              <h3 class="card-title"><span>🎨</span> Accent Theme</h3>
+            </div>
+            <div class="theme-selector-grid">
+              <div class="theme-option active" data-theme="default" onclick="selectTheme('default')">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #7c5cfc 0%, #4da6ff 100%);"></div>
+                <span>Royal Purple</span>
+              </div>
+              <div class="theme-option" data-theme="emerald" onclick="selectTheme('emerald')">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #22d3ee 0%, #34d399 100%);"></div>
+                <span>Emerald Green</span>
+              </div>
+              <div class="theme-option" data-theme="solar" onclick="selectTheme('solar')">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #f472b6 0%, #fbbf24 100%);"></div>
+                <span>Solar Glow</span>
+              </div>
+            </div>
+          </div>
+          <div class="settings-card card" style="grid-column: 1 / -1; margin-top: var(--space-sm);">
+            <div class="card-header">
+              <h3 class="card-title"><span>💾</span> Data Management</h3>
+            </div>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: var(--space-md); line-height: 1.5;">
+              Export your productivity state as a JSON file, restore your progress from a backup, or reset the app to factory defaults.
+            </p>
+            <div class="data-actions-row">
+              <button class="btn btn-secondary" onclick="exportData()">📤 Export State</button>
+              <div class="import-btn-wrapper">
+                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 Import State</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)" />
+              </div>
+              <button class="btn btn-secondary" style="border-color: rgba(244,114,182,0.4); color: var(--accent-rose);" onclick="resetAllData()">⚠️ Reset All Data</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- ==================== MODALS ==================== -->
+
+<!-- Add Habit Modal -->
+<div class="modal-overlay" id="habitModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">New Habit</h3>
+      <button class="modal-close" onclick="closeModal('habitModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <label>Habit Name</label>
+      <input class="input" type="text" id="habitNameInput" placeholder="e.g., Read 30 minutes" />
+      <label>Icon (emoji)</label>
+      <input class="input" type="text" id="habitIconInput" placeholder="e.g., 📖" maxlength="4" />
+      <label>Color Theme</label>
+      <select class="select" id="habitColorInput">
+        <option value="purple">Purple</option>
+        <option value="blue">Blue</option>
+        <option value="green">Green</option>
+        <option value="amber">Amber</option>
+        <option value="rose">Rose</option>
+        <option value="cyan">Cyan</option>
+      </select>
+      <label>Goal (days per week)</label>
+      <select class="select" id="habitGoalInput">
+        <option value="3">3 days</option>
+        <option value="5">5 days</option>
+        <option value="7" selected>7 days (Daily)</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('habitModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addHabit()">Create Habit</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Habit Modal -->
+<div class="modal-overlay" id="editHabitModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Habit</h3>
+      <button class="modal-close" onclick="closeModal('editHabitModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editHabitId" />
+      <label for="editHabitNameInput">Habit Name</label>
+      <input class="input" type="text" id="editHabitNameInput" placeholder="e.g., Read 30 minutes" />
+      <label for="editHabitIconInput">Icon (emoji)</label>
+      <input class="input" type="text" id="editHabitIconInput" placeholder="e.g., 📖" maxlength="4" />
+      <label for="editHabitColorInput">Color Theme</label>
+      <select class="select" id="editHabitColorInput">
+        <option value="purple">Purple</option>
+        <option value="blue">Blue</option>
+        <option value="green">Green</option>
+        <option value="amber">Amber</option>
+        <option value="rose">Rose</option>
+        <option value="cyan">Cyan</option>
+      </select>
+      <label for="editHabitGoalInput">Goal (days per week)</label>
+      <select class="select" id="editHabitGoalInput">
+        <option value="3">3 days</option>
+        <option value="5">5 days</option>
+        <option value="7">7 days (Daily)</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('editHabitModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="updateHabit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- Edit Task Modal -->
+<div class="modal-overlay" id="editTaskModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Task</h3>
+      <button class="modal-close" onclick="closeModal('editTaskModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editTaskId" />
+      <label for="editTaskTitleInput">Task Title</label>
+      <input class="input" type="text" id="editTaskTitleInput" placeholder="What needs to be done?" />
+      <div class="form-row">
+        <div style="flex:1; display: flex; flex-direction: column; gap: var(--space-xs);">
+          <label for="editTaskPriorityInput" style="margin-bottom: 0;">Priority</label>
+          <select class="select" id="editTaskPriorityInput" style="width: 100%;">
+            <option value="low">Low Priority</option>
+            <option value="medium">Medium Priority</option>
+            <option value="high">High Priority</option>
+          </select>
+        </div>
+        <div style="flex:1; display: flex; flex-direction: column; gap: var(--space-xs);">
+          <label for="editTaskCategoryInput" style="margin-bottom: 0;">Category</label>
+          <select class="select" id="editTaskCategoryInput" style="width: 100%;">
+            <option value="general">General</option>
+            <option value="study">Study</option>
+            <option value="project">Project</option>
+            <option value="personal">Personal</option>
+          </select>
+        </div>
+      </div>
+      <label for="editTaskDueInput">Due Date</label>
+      <input class="input" type="date" id="editTaskDueInput" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('editTaskModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="updateTask()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Exam Modal -->
+<div class="modal-overlay" id="examModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">New Exam Goal</h3>
+      <button class="modal-close" onclick="closeModal('examModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <label for="examSubjectInput">Subject Name</label>
+      <input class="input" type="text" id="examSubjectInput" placeholder="e.g. Calculus" />
+      
+      <label for="examTitleInput">Exam Description</label>
+      <input class="input" type="text" id="examTitleInput" placeholder="e.g. Midterm Chapter 1-5" />
+      
+      <div class="form-row">
+        <div style="flex:1; display:flex; flex-direction:column; gap:var(--space-xs);">
+          <label for="examDateInput" style="margin-bottom:0;">Exam Date</label>
+          <input class="input" type="date" id="examDateInput" />
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:var(--space-xs);">
+          <label for="examGoalInput" style="margin-bottom:0;">Study Goal (Hours)</label>
+          <input class="input" type="number" id="examGoalInput" min="1" max="100" placeholder="e.g. 15" />
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:var(--space-sm); margin-top:var(--space-xs);">
+        <input type="checkbox" id="examAutoSched" style="width:16px; height:16px; cursor:pointer;" checked />
+        <label for="examAutoSched" style="margin-bottom:0; cursor:pointer; font-size:12px; color:var(--text-primary);">Auto-generate study plan & reminders</label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('examModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addExam()">Add Exam Goal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Target Modal -->
+<div class="modal-overlay" id="targetModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">New Weekly Target</h3>
+      <button class="modal-close" onclick="closeModal('targetModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <label for="targetTitleInput">Target Description</label>
+      <input class="input" type="text" id="targetTitleInput" placeholder="e.g. Solve 10 calculus problems" />
+      
+      <label for="targetCategoryInput">Subject Category</label>
+      <select class="select" id="targetCategoryInput" style="width:100%;">
+        <option value="math">📖 Math</option>
+        <option value="science">🔬 Science</option>
+        <option value="coding">💻 Coding</option>
+        <option value="general">⭐ General</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('targetModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addTarget()">Add Target</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Event Modal -->
+<div class="modal-overlay" id="eventModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">New Event</h3>
+      <button class="modal-close" onclick="closeModal('eventModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <label for="eventTitleInput">Event Title</label>
+      <input class="input" type="text" id="eventTitleInput" placeholder="e.g. Calculus Chapter 1 Study" />
+      
+      <div class="form-row">
+        <div style="flex:1; display:flex; flex-direction:column; gap:var(--space-xs);">
+          <label for="eventDateInput" style="margin-bottom:0;">Date</label>
+          <input class="input" type="date" id="eventDateInput" />
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:var(--space-xs);">
+          <label for="eventTimeInput" style="margin-bottom:0;">Time</label>
+          <input class="input" type="time" id="eventTimeInput" />
+        </div>
+      </div>
+
+      <label for="eventTypeInput">Event Type</label>
+      <select class="select" id="eventTypeInput" style="width:100%;">
+        <option value="study" selected>📖 Study Session</option>
+        <option value="review">🔁 Revision & Review</option>
+        <option value="exam">📝 Exam / Assessment</option>
+        <option value="break">☕ Break / Recharge</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('eventModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addEvent()">Add Event</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
