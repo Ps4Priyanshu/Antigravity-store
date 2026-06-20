@@ -98,7 +98,7 @@
       <!-- ========== DASHBOARD ========== -->
       <section class="page-view active" id="page-dashboard">
 
-        <!-- Hero Welcome Banner -->
+        <!-- ── Hero Welcome Banner ── -->
         <div class="dash-hero">
           <div class="dash-hero-glow"></div>
           <div class="dash-hero-content">
@@ -153,10 +153,12 @@
           </div>
         </div>
 
-        <!-- Metric Cards Row -->
+        <!-- ── Metric Cards Row ── -->
         <div class="dash-metrics">
           <div class="metric-card" id="metricTasksToday">
-            <div class="metric-icon-wrap green"><span>✅</span></div>
+            <div class="metric-icon-wrap green">
+              <span>✅</span>
+            </div>
             <div class="metric-body">
               <span class="metric-value" id="statCompletedToday">0</span>
               <span class="metric-label">Tasks Today</span>
@@ -165,7 +167,9 @@
           </div>
 
           <div class="metric-card" id="metricStreak">
-            <div class="metric-icon-wrap amber"><span>🔥</span></div>
+            <div class="metric-icon-wrap amber">
+              <span>🔥</span>
+            </div>
             <div class="metric-body">
               <span class="metric-value" id="statStreak">0</span>
               <span class="metric-label">Day Streak</span>
@@ -176,7 +180,9 @@
           </div>
 
           <div class="metric-card" id="metricStudy">
-            <div class="metric-icon-wrap purple"><span>📖</span></div>
+            <div class="metric-icon-wrap purple">
+              <span>📖</span>
+            </div>
             <div class="metric-body">
               <span class="metric-value" id="statStudyHours">0h</span>
               <span class="metric-label">Study Hours</span>
@@ -185,7 +191,9 @@
           </div>
 
           <div class="metric-card" id="metricHabits">
-            <div class="metric-icon-wrap cyan"><span>🎯</span></div>
+            <div class="metric-icon-wrap cyan">
+              <span>🎯</span>
+            </div>
             <div class="metric-body">
               <span class="metric-value" id="statHabitRate">0%</span>
               <span class="metric-label">Habit Rate</span>
@@ -203,8 +211,9 @@
           </div>
         </div>
 
-        <!-- Main Dashboard Grid -->
+        <!-- ── Main Dashboard Grid ── -->
         <div class="dash-grid">
+
           <!-- Weekly Activity Chart -->
           <div class="dash-card dash-card-wide" id="activityCard">
             <div class="dash-card-header">
@@ -336,6 +345,7 @@
           <button class="btn btn-primary" id="addTaskBtn" onclick="toggleAddTaskForm()">➕ New Task</button>
         </div>
 
+        <!-- Add Task Form -->
         <div class="add-task-form" id="addTaskForm">
           <input class="input" type="text" id="taskTitleInput" placeholder="What needs to be done?" autofocus />
           <div class="form-row">
@@ -358,12 +368,16 @@
           </div>
         </div>
 
+        <!-- Task List -->
         <div class="task-list" id="taskList"></div>
       </section>
 
       <!-- ========== HABITS ========== -->
       <section class="page-view" id="page-habits">
         <div class="habits-grid" id="habitsGrid">
+          <!-- Habits render here -->
+
+          <!-- Add Habit Card -->
           <div class="add-habit-card" id="addHabitCard" onclick="openHabitModal()">
             <div class="add-icon">+</div>
             <span style="font-weight:600;">Add New Habit</span>
@@ -375,12 +389,14 @@
       <!-- ========== FOCUS TIMER ========== -->
       <section class="page-view" id="page-timer">
         <div class="timer-container">
+          <!-- Timer Mode Selector -->
           <div class="timer-modes">
             <div class="timer-mode active" data-mode="focus" onclick="setTimerMode(this)">Focus</div>
             <div class="timer-mode" data-mode="short-break" onclick="setTimerMode(this)">Short Break</div>
             <div class="timer-mode" data-mode="long-break" onclick="setTimerMode(this)">Long Break</div>
           </div>
 
+          <!-- Timer Display -->
           <div class="timer-display">
             <svg class="timer-ring" viewBox="0 0 120 120">
               <defs>
@@ -399,12 +415,14 @@
             </div>
           </div>
 
+          <!-- Timer Controls -->
           <div class="timer-controls">
             <button class="timer-btn timer-btn-secondary" onclick="resetTimer()" title="Reset">⟲</button>
             <button class="timer-btn timer-btn-primary" id="timerStartBtn" onclick="toggleTimer()">▶</button>
             <button class="timer-btn timer-btn-secondary" onclick="skipTimer()" title="Skip">⏭</button>
           </div>
 
+          <!-- Timer Stats -->
           <div class="timer-stats">
             <div class="timer-stat">
               <div class="timer-stat-value" id="timerTodaySessions">0</div>
@@ -420,6 +438,7 @@
             </div>
           </div>
 
+          <!-- Session History -->
           <div class="sessions-section">
             <div class="section-header">
               <h3 class="section-title">Recent Sessions</h3>
@@ -436,7 +455,11 @@
       <!-- ========== STUDY PLANNER ========== -->
       <section class="page-view" id="page-planner">
         <div class="planner-layout">
+          
+          <!-- Top Row: Targets, Exams & Reminders Dashboard -->
           <div class="planner-dashboard">
+            
+            <!-- Exams & Goals Card -->
             <div class="planner-card card" id="examsCard">
               <div class="card-header" style="margin-bottom: var(--space-sm);">
                 <div>
@@ -449,6 +472,8 @@
                 <p class="dash-empty-text">No exams added yet</p>
               </div>
             </div>
+            
+            <!-- Weekly Targets Card -->
             <div class="planner-card card" id="targetsCard">
               <div class="card-header" style="margin-bottom: var(--space-sm);">
                 <div>
@@ -461,6 +486,8 @@
                 <p class="dash-empty-text">No targets tracked yet</p>
               </div>
             </div>
+
+            <!-- Revision Reminders Card -->
             <div class="planner-card card" id="remindersCard">
               <div class="card-header" style="margin-bottom: var(--space-sm);">
                 <div>
@@ -472,8 +499,10 @@
                 <p class="dash-empty-text">No reminders scheduled</p>
               </div>
             </div>
+
           </div>
 
+          <!-- Bottom Section: Daily Schedule Grid -->
           <div class="planner-calendar-section card" style="margin-top: var(--space-lg); border-radius: var(--radius-xl);">
             <div class="planner-toolbar" style="margin-bottom: var(--space-md); border-bottom: none; padding: 0;">
               <div>
@@ -490,12 +519,15 @@
             </div>
             <div class="planner-grid" id="plannerGrid"></div>
           </div>
+
         </div>
       </section>
 
       <!-- ========== SETTINGS ========== -->
       <section class="page-view" id="page-settings">
         <div class="settings-grid">
+          
+          <!-- Profile Customization -->
           <div class="settings-card card">
             <div class="card-header">
               <h3 class="card-title"><span>👤</span> User Profile</h3>
@@ -512,6 +544,8 @@
               <button class="btn btn-primary" onclick="saveProfileSettings()">Save Profile</button>
             </div>
           </div>
+
+          <!-- Study Target -->
           <div class="settings-card card">
             <div class="card-header">
               <h3 class="card-title"><span>🎯</span> Weekly Goal</h3>
@@ -524,6 +558,8 @@
               <button class="btn btn-primary" onclick="saveGoalSettings()">Save Goal</button>
             </div>
           </div>
+
+          <!-- Timer Presets -->
           <div class="settings-card card">
             <div class="card-header">
               <h3 class="card-title"><span>⏱️</span> Pomodoro Timer</h3>
@@ -545,6 +581,8 @@
               <button class="btn btn-primary" onclick="saveTimerSettings()">Save Presets</button>
             </div>
           </div>
+
+          <!-- Accent Theme -->
           <div class="settings-card card">
             <div class="card-header">
               <h3 class="card-title"><span>🎨</span> Accent Theme</h3>
@@ -564,6 +602,8 @@
               </div>
             </div>
           </div>
+
+          <!-- Data Management -->
           <div class="settings-card card" style="grid-column: 1 / -1; margin-top: var(--space-sm);">
             <div class="card-header">
               <h3 class="card-title"><span>💾</span> Data Management</h3>
@@ -573,13 +613,16 @@
             </p>
             <div class="data-actions-row">
               <button class="btn btn-secondary" onclick="exportData()">📤 Export State</button>
+              
               <div class="import-btn-wrapper">
                 <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 Import State</button>
                 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)" />
               </div>
+              
               <button class="btn btn-secondary" style="border-color: rgba(244,114,182,0.4); color: var(--accent-rose);" onclick="resetAllData()">⚠️ Reset All Data</button>
             </div>
           </div>
+
         </div>
       </section>
 
