@@ -95,12 +95,18 @@ function persist() {
 
 function navigateTo(page) {
   state.currentPage = page;
+
+  // Update nav items
   document.querySelectorAll('.nav-item[data-page]').forEach(item => {
     item.classList.toggle('active', item.dataset.page === page);
   });
+
+  // Update page views
   document.querySelectorAll('.page-view').forEach(view => {
     view.classList.toggle('active', view.id === `page-${page}`);
   });
+
+  // Update header
   const titles = {
     dashboard: ['Dashboard', 'Welcome back! Here\'s your productivity overview.'],
     tasks: ['Tasks', 'Manage and organize all your tasks.'],
@@ -109,10 +115,15 @@ function navigateTo(page) {
     planner: ['Study Planner', 'Plan and organize your study week.'],
     settings: ['Settings', 'Customize your preferences, goals, and layout.'],
   };
+
   const [title, subtitle] = titles[page] || ['FocusFlow', ''];
   document.getElementById('pageTitle').textContent = title;
   document.getElementById('pageSubtitle').textContent = subtitle;
+
+  // Render page
   renderPage(page);
+
+  // Close mobile sidebar
   closeMobileSidebar();
 }
 
@@ -130,16 +141,23 @@ function renderPage(page) {
 // ==================== DASHBOARD ====================
 
 function renderDashboard() {
+  // Apply profile changes
   applyProfileChanges();
+
+  // Greeting time
   const hour = new Date().getHours();
   let greeting = 'morning';
   if (hour >= 12 && hour < 17) greeting = 'afternoon';
   else if (hour >= 17) greeting = 'evening';
   document.getElementById('greetingTime').textContent = greeting;
   document.getElementById('greetingUsername').textContent = state.settings.user.name;
+
+  // Hero eyebrow date
   const now = new Date();
   document.getElementById('dashHeroDate').textContent =
     now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+  // Core data
   const today = getDateString(now);
   const pendingTasks = state.tasks.filter(t => !t.completed);
   const completedTasks = state.tasks.filter(t => t.completed);
@@ -148,13 +166,19 @@ function renderDashboard() {
   const weekSessions = getWeekSessions();
   const weekMinutes = weekSessions.reduce((sum, s) => sum + s.duration, 0);
   const todayCompletedTasks = state.tasks.filter(t => t.completed && t.completedDate === today);
+
+  // Hero stats
   document.getElementById('dashPendingCount').textContent = pendingTasks.length;
   document.getElementById('dashFocusToday').textContent = todaySessions.length;
+
+  // ── Productivity Score ──
   const prodScore = calculateProductivityScore();
   document.getElementById('prodScoreValue').textContent = prodScore;
   const circumference = 2 * Math.PI * 60;
   const prodOffset = circumference * (1 - prodScore / 100);
   document.getElementById('prodRingProgress').style.strokeDashoffset = prodOffset;
+
+  // Caption
   const captions = [
     [90, "Outstanding! You're on fire! 🔥"],
     [70, "Great progress — keep it up! 💪"],
@@ -163,14 +187,22 @@ function renderDashboard() {
   ];
   const caption = captions.find(([min]) => prodScore >= min)[1];
   document.getElementById('prodCaption').textContent = caption;
+
+  // ── Metric Cards ──
   document.getElementById('statCompletedToday').textContent = todayCompletedTasks.length;
   document.getElementById('statStreak').textContent = getMaxHabitStreak();
   document.getElementById('statStudyHours').textContent = formatHours(todayMinutes);
+
+  // Habit rate
   const habitRate = calculateHabitRate();
   document.getElementById('statHabitRate').textContent = `${habitRate}%`;
+
+  // Mini habit ring
   const miniCirc = 2 * Math.PI * 14;
   const miniOffset = miniCirc * (1 - habitRate / 100);
   document.getElementById('habitMiniProgress').style.strokeDashoffset = miniOffset;
+
+  // Streak trend
   const streakEl = document.getElementById('streakTrend');
   const streak = getMaxHabitStreak();
   if (streak > 0) {
@@ -180,15 +212,25 @@ function renderDashboard() {
     streakEl.className = 'metric-trend neutral';
     streakEl.innerHTML = '<span>–</span> Start today';
   }
+
+  // ── Sparklines ──
   renderSparkline('sparkTasks', getLast7DaysCounts('tasks'));
   renderSparkline('sparkStudy', getLast7DaysCounts('sessions'));
+
+  // ── Weekly Activity Bar Chart ──
   renderActivityChart();
+
+  // ── Study Hours Card ──
   document.getElementById('studyHoursBig').textContent = formatHoursLong(weekMinutes);
   document.getElementById('studyToday').textContent = `${todayMinutes}m`;
   document.getElementById('studyWeek').textContent = `${weekMinutes}m`;
   document.getElementById('studySessions').textContent = weekSessions.length;
   document.getElementById('studyHoursGoal').textContent = state.settings.goals.weeklyStudyHours;
+
+  // ── Habit Completion Card ──
   renderHabitCompletionCard();
+
+  // ── Recent Tasks ──
   const recentEl = document.getElementById('dashRecentTasks');
   const recentTasks = [...state.tasks].reverse().slice(0, 6);
   if (recentTasks.length === 0) {
@@ -202,6 +244,8 @@ function renderDashboard() {
       </div>
     `).join('');
   }
+
+  // ── Today's Schedule ──
   const scheduleEl = document.getElementById('dashTodaySchedule');
   const todayEvents = state.events.filter(e => e.date === today).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
   if (todayEvents.length === 0) {
@@ -219,21 +263,33 @@ function renderDashboard() {
       `;
     }).join('');
   }
+
+  // Tasks badge
   updateTasksBadge();
 }
 
+// ── Productivity Score ──
 function calculateProductivityScore() {
   let score = 0;
   const today = getDateString(new Date());
+
+  // Task completion: up to 40 points
   const total = state.tasks.length;
   const completed = state.tasks.filter(t => t.completed).length;
   if (total > 0) score += Math.round((completed / total) * 40);
+
+  // Habit consistency: up to 30 points
   const habitRate = calculateHabitRate();
   score += Math.round((habitRate / 100) * 30);
+
+  // Focus sessions today: up to 20 points (max at 4 sessions)
   const todaySessions = getTodaySessions();
   score += Math.min(todaySessions.length * 5, 20);
+
+  // Activity streak: up to 10 points
   const streak = getMaxHabitStreak();
   score += Math.min(streak * 2, 10);
+
   return Math.min(score, 100);
 }
 
@@ -244,12 +300,15 @@ function calculateHabitRate() {
   return Math.round((completed / state.habits.length) * 100);
 }
 
+// ── Activity Bar Chart ──
 function renderActivityChart() {
   const barsEl = document.getElementById('activityBars');
   const labelsEl = document.getElementById('activityLabels');
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const today = new Date();
   const todayStr = getDateString(today);
+
+  // Get last 7 days
   const days = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today);
@@ -260,8 +319,11 @@ function renderActivityChart() {
       isToday: getDateString(d) === todayStr,
     });
   }
+
+  // Get activity counts
   const counts = days.map(d => state.activity[d.date] || 0);
   const maxCount = Math.max(...counts, 1);
+
   barsEl.innerHTML = days.map((day, i) => {
     const height = Math.max((counts[i] / maxCount) * 100, 4);
     return `
@@ -272,11 +334,13 @@ function renderActivityChart() {
       </div>
     `;
   }).join('');
+
   labelsEl.innerHTML = days.map(day => `
     <span class="activity-label ${day.isToday ? 'today' : ''}">${day.name}</span>
   `).join('');
 }
 
+// ── Sparklines ──
 function renderSparkline(containerId, data) {
   const el = document.getElementById(containerId);
   if (!el) return;
@@ -303,20 +367,24 @@ function getLast7DaysCounts(type) {
   return counts;
 }
 
+// ── Habit Completion Card ──
 function renderHabitCompletionCard() {
   const today = getDateString(new Date());
   const totalHabits = state.habits.length;
   const completedHabits = state.habits.filter(h => h.weekChecks && h.weekChecks[today]).length;
   const pct = totalHabits > 0 ? Math.round((completedHabits / totalHabits) * 100) : 0;
+
   document.getElementById('habitCompletionPct').textContent = `${pct}%`;
   const circumference = 2 * Math.PI * 50;
   const offset = circumference * (1 - pct / 100);
   document.getElementById('habitRingProgress').style.strokeDashoffset = offset;
+
   const listEl = document.getElementById('habitCompletionList');
   if (totalHabits === 0) {
     listEl.innerHTML = '<p class="dash-empty-text">No habits tracked yet</p>';
     return;
   }
+
   listEl.innerHTML = state.habits.slice(0, 5).map(h => {
     const done = h.weekChecks && h.weekChecks[today];
     return `
@@ -329,18 +397,29 @@ function renderHabitCompletionCard() {
   }).join('');
 }
 
+// ── Helper: Week Sessions ──
 function getWeekSessions() {
   const weekDates = getThisWeekDates();
   return state.sessions.filter(s => weekDates.includes(s.date) && s.mode === 'focus');
 }
 
 function getEventAccentColor(type) {
-  const map = { study: 'var(--accent-primary)', review: 'var(--accent-green)', exam: 'var(--accent-rose)', break: 'var(--accent-amber)' };
+  const map = {
+    study: 'var(--accent-primary)',
+    review: 'var(--accent-green)',
+    exam: 'var(--accent-rose)',
+    break: 'var(--accent-amber)',
+  };
   return map[type] || 'var(--accent-primary)';
 }
 
 function getEventBadgeColor(type) {
-  const map = { study: 'purple', review: 'green', exam: 'rose', break: 'amber' };
+  const map = {
+    study: 'purple',
+    review: 'green',
+    exam: 'rose',
+    break: 'amber',
+  };
   return map[type] || 'purple';
 }
 
@@ -361,25 +440,36 @@ function trackActivity() {
 function renderTasks() {
   const list = document.getElementById('taskList');
   let filtered = [...state.tasks];
+
+  // Apply status filter
   switch (state.currentFilter) {
     case 'pending': filtered = filtered.filter(t => !t.completed); break;
     case 'completed': filtered = filtered.filter(t => t.completed); break;
     case 'high': filtered = filtered.filter(t => t.priority === 'high'); break;
   }
+
+  // Apply search query filter
   if (state.taskSearchQuery) {
     filtered = filtered.filter(t => 
       t.title.toLowerCase().includes(state.taskSearchQuery) || 
       t.category.toLowerCase().includes(state.taskSearchQuery)
     );
   }
+
+  // Sort: incomplete first, then by creation date (newest first)
   filtered.sort((a, b) => {
     if (a.completed !== b.completed) return a.completed ? 1 : -1;
     return b.createdAt - a.createdAt;
   });
+
   if (filtered.length === 0) {
     let emptyMsg = `No ${state.currentFilter} tasks.`;
-    if (state.currentFilter === 'all') emptyMsg = 'Create your first task to get started!';
-    if (state.taskSearchQuery) emptyMsg = `No tasks matching "${state.taskSearchQuery}".`;
+    if (state.currentFilter === 'all') {
+      emptyMsg = 'Create your first task to get started!';
+    }
+    if (state.taskSearchQuery) {
+      emptyMsg = `No tasks matching "${state.taskSearchQuery}".`;
+    }
     list.innerHTML = `
       <div class="empty-state">
         <div class="empty-state-icon">📝</div>
@@ -388,6 +478,7 @@ function renderTasks() {
       </div>`;
     return;
   }
+
   list.innerHTML = filtered.map(task => `
     <div class="task-item ${task.completed ? 'completed' : ''}" id="task-${task.id}">
       <div class="checkbox-wrapper">
@@ -408,6 +499,7 @@ function renderTasks() {
       </div>
     </div>
   `).join('');
+
   updateTasksBadge();
 }
 
@@ -421,21 +513,32 @@ function toggleAddTaskForm() {
 
 function addTask() {
   const title = document.getElementById('taskTitleInput').value.trim();
-  if (!title) { showToast('Please enter a task title.', 'error'); return; }
+  if (!title) {
+    showToast('Please enter a task title.', 'error');
+    return;
+  }
+
   const task = {
-    id: generateId(), title,
+    id: generateId(),
+    title,
     priority: document.getElementById('taskPriorityInput').value,
     category: document.getElementById('taskCategoryInput').value,
     dueDate: document.getElementById('taskDueInput').value || null,
-    completed: false, createdAt: Date.now(),
+    completed: false,
+    createdAt: Date.now(),
   };
+
   state.tasks.push(task);
-  persist(); trackActivity();
+  persist();
+  trackActivity();
+
+  // Reset form
   document.getElementById('taskTitleInput').value = '';
   document.getElementById('taskPriorityInput').value = 'medium';
   document.getElementById('taskCategoryInput').value = 'general';
   document.getElementById('taskDueInput').value = '';
   toggleAddTaskForm();
+
   renderTasks();
   showToast('Task added successfully!', 'success');
 }
@@ -445,14 +548,19 @@ function toggleTask(id) {
   if (task) {
     task.completed = !task.completed;
     task.completedDate = task.completed ? getDateString(new Date()) : null;
-    persist(); trackActivity(); renderTasks();
-    if (task.completed) showToast('Task completed! 🎉', 'success');
+    persist();
+    trackActivity();
+    renderTasks();
+    if (task.completed) {
+      showToast('Task completed! 🎉', 'success');
+    }
   }
 }
 
 function deleteTask(id) {
   state.tasks = state.tasks.filter(t => t.id !== id);
-  persist(); renderTasks();
+  persist();
+  renderTasks();
   showToast('Task deleted.', 'info');
 }
 
@@ -465,17 +573,22 @@ function updateTasksBadge() {
 
 function handleTaskSearch() {
   const input = document.getElementById('taskSearchInput');
-  if (input) { state.taskSearchQuery = input.value.trim().toLowerCase(); renderTasks(); }
+  if (input) {
+    state.taskSearchQuery = input.value.trim().toLowerCase();
+    renderTasks();
+  }
 }
 
 function openEditTaskModal(id) {
   const task = state.tasks.find(t => t.id === id);
   if (!task) return;
+
   document.getElementById('editTaskId').value = task.id;
   document.getElementById('editTaskTitleInput').value = task.title;
   document.getElementById('editTaskPriorityInput').value = task.priority;
   document.getElementById('editTaskCategoryInput').value = task.category;
   document.getElementById('editTaskDueInput').value = task.dueDate || '';
+
   openModal('editTaskModal');
 }
 
@@ -485,15 +598,27 @@ function updateTask() {
   const priority = document.getElementById('editTaskPriorityInput').value;
   const category = document.getElementById('editTaskCategoryInput').value;
   const dueDate = document.getElementById('editTaskDueInput').value || null;
-  if (!title) { showToast('Task title is required.', 'error'); return; }
+
+  if (!title) {
+    showToast('Task title is required.', 'error');
+    return;
+  }
+
   const task = state.tasks.find(t => t.id === id);
   if (task) {
-    task.title = title; task.priority = priority; task.category = category; task.dueDate = dueDate;
-    persist(); closeModal('editTaskModal'); renderTasks();
+    task.title = title;
+    task.priority = priority;
+    task.category = category;
+    task.dueDate = dueDate;
+    
+    persist();
+    closeModal('editTaskModal');
+    renderTasks();
     showToast('Task updated successfully!', 'success');
   }
 }
 
+// Task filter tabs
 document.getElementById('taskFilters')?.addEventListener('click', (e) => {
   const tab = e.target.closest('.filter-tab');
   if (!tab) return;
@@ -503,6 +628,7 @@ document.getElementById('taskFilters')?.addEventListener('click', (e) => {
   renderTasks();
 });
 
+// Allow Enter key to add task
 document.getElementById('taskTitleInput')?.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') addTask();
 });
@@ -513,11 +639,13 @@ function renderHabits() {
   const grid = document.getElementById('habitsGrid');
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const thisWeekDates = getThisWeekDates();
+
   const habitCards = state.habits.map(habit => {
     const checkedDays = habit.weekChecks || {};
     const checkedCount = thisWeekDates.filter(d => checkedDays[d]).length;
     const progressPercent = Math.round((checkedCount / habit.goal) * 100);
     const streak = calculateHabitStreak(habit);
+
     return `
       <div class="habit-card">
         <div class="habit-header">
@@ -556,6 +684,7 @@ function renderHabits() {
       </div>
     `;
   }).join('');
+
   grid.innerHTML = habitCards + `
     <div class="add-habit-card" onclick="openHabitModal()">
       <div class="add-icon">+</div>
@@ -578,10 +707,27 @@ function addHabit() {
   const icon = document.getElementById('habitIconInput').value.trim() || '⭐';
   const color = document.getElementById('habitColorInput').value;
   const goal = parseInt(document.getElementById('habitGoalInput').value);
-  if (!name) { showToast('Please enter a habit name.', 'error'); return; }
-  const habit = { id: generateId(), name, icon, color, goal, weekChecks: {}, createdAt: Date.now() };
+
+  if (!name) {
+    showToast('Please enter a habit name.', 'error');
+    return;
+  }
+
+  const habit = {
+    id: generateId(),
+    name,
+    icon,
+    color,
+    goal,
+    weekChecks: {},
+    createdAt: Date.now(),
+  };
+
   state.habits.push(habit);
-  persist(); trackActivity(); closeModal('habitModal'); renderHabits();
+  persist();
+  trackActivity();
+  closeModal('habitModal');
+  renderHabits();
   showToast('Habit created! Start tracking today.', 'success');
 }
 
@@ -590,23 +736,28 @@ function toggleHabitDay(habitId, date) {
   if (!habit) return;
   if (!habit.weekChecks) habit.weekChecks = {};
   habit.weekChecks[date] = !habit.weekChecks[date];
-  persist(); trackActivity(); renderHabits();
+  persist();
+  trackActivity();
+  renderHabits();
 }
 
 function deleteHabit(id) {
   state.habits = state.habits.filter(h => h.id !== id);
-  persist(); renderHabits();
+  persist();
+  renderHabits();
   showToast('Habit removed.', 'info');
 }
 
 function openEditHabitModal(id) {
   const habit = state.habits.find(h => h.id === id);
   if (!habit) return;
+
   document.getElementById('editHabitId').value = habit.id;
   document.getElementById('editHabitNameInput').value = habit.name;
   document.getElementById('editHabitIconInput').value = habit.icon;
   document.getElementById('editHabitColorInput').value = habit.color;
   document.getElementById('editHabitGoalInput').value = habit.goal;
+
   openModal('editHabitModal');
 }
 
@@ -616,11 +767,22 @@ function updateHabit() {
   const icon = document.getElementById('editHabitIconInput').value.trim() || '⭐';
   const color = document.getElementById('editHabitColorInput').value;
   const goal = parseInt(document.getElementById('editHabitGoalInput').value);
-  if (!name) { showToast('Habit name is required.', 'error'); return; }
+
+  if (!name) {
+    showToast('Habit name is required.', 'error');
+    return;
+  }
+
   const habit = state.habits.find(h => h.id === id);
   if (habit) {
-    habit.name = name; habit.icon = icon; habit.color = color; habit.goal = goal;
-    persist(); closeModal('editHabitModal'); renderHabits();
+    habit.name = name;
+    habit.icon = icon;
+    habit.color = color;
+    habit.goal = goal;
+
+    persist();
+    closeModal('editHabitModal');
+    renderHabits();
     showToast('Habit updated successfully!', 'success');
   }
 }
@@ -632,8 +794,11 @@ function calculateHabitStreak(habit) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const dateStr = getDateString(d);
-    if (habit.weekChecks && habit.weekChecks[dateStr]) { streak++; }
-    else if (i > 0) { break; }
+    if (habit.weekChecks && habit.weekChecks[dateStr]) {
+      streak++;
+    } else if (i > 0) {
+      break;
+    }
   }
   return streak;
 }
@@ -647,30 +812,48 @@ function getMaxHabitStreak() {
 
 function setTimerMode(el) {
   if (state.timer.isRunning) return;
+
   document.querySelectorAll('.timer-mode').forEach(m => m.classList.remove('active'));
   el.classList.add('active');
+
   const mode = el.dataset.mode;
   let minutes = 25;
   if (mode === 'focus') minutes = state.settings.timerPreset.focus;
   else if (mode === 'short-break') minutes = state.settings.timerPreset.short;
   else if (mode === 'long-break') minutes = state.settings.timerPreset.long;
+
   state.timer.duration = minutes * 60;
   state.timer.remaining = minutes * 60;
   state.timer.mode = mode;
-  const labels = { 'focus': 'Focus Session', 'short-break': 'Short Break', 'long-break': 'Long Break' };
+
+  const labels = {
+    'focus': 'Focus Session',
+    'short-break': 'Short Break',
+    'long-break': 'Long Break',
+  };
   document.getElementById('timerModeLabel').textContent = labels[state.timer.mode];
   updateTimerDisplay();
 }
 
-function toggleTimer() { if (state.timer.isRunning) { pauseTimer(); } else { startTimer(); } }
+function toggleTimer() {
+  if (state.timer.isRunning) {
+    pauseTimer();
+  } else {
+    startTimer();
+  }
+}
 
 function startTimer() {
   state.timer.isRunning = true;
   document.getElementById('timerStartBtn').textContent = '⏸';
+
   state.timer.interval = setInterval(() => {
     state.timer.remaining--;
     updateTimerDisplay();
-    if (state.timer.remaining <= 0) { completeTimer(); }
+
+    if (state.timer.remaining <= 0) {
+      completeTimer();
+    }
   }, 1000);
 }
 
@@ -681,18 +864,25 @@ function pauseTimer() {
   updateTimerDisplay();
 }
 
-function resetTimer() { pauseTimer(); state.timer.remaining = state.timer.duration; updateTimerDisplay(); }
+function resetTimer() {
+  pauseTimer();
+  state.timer.remaining = state.timer.duration;
+  updateTimerDisplay();
+}
 
 function skipTimer() {
   if (state.timer.isRunning && state.timer.mode === 'focus') {
     const elapsed = state.timer.duration - state.timer.remaining;
-    if (elapsed > 60) { logSession(Math.floor(elapsed / 60)); }
+    if (elapsed > 60) {
+      logSession(Math.floor(elapsed / 60));
+    }
   }
   resetTimer();
 }
 
 function completeTimer() {
   pauseTimer();
+
   if (state.timer.mode === 'focus') {
     const minutes = Math.floor(state.timer.duration / 60);
     logSession(minutes);
@@ -700,20 +890,27 @@ function completeTimer() {
   } else {
     showToast('Break is over! Ready for another focus session?', 'info');
   }
+
+  // Play pleasant synthesised notification sound
   playChime();
+
   state.timer.remaining = state.timer.duration;
   updateTimerDisplay();
 }
 
 function logSession(minutes) {
   const session = {
-    id: generateId(), duration: minutes, mode: state.timer.mode,
+    id: generateId(),
+    duration: minutes,
+    mode: state.timer.mode,
     date: getDateString(new Date()),
     time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     timestamp: Date.now(),
   };
   state.sessions.push(session);
-  persist(); trackActivity(); renderTimerStats();
+  persist();
+  trackActivity();
+  renderTimerStats();
 }
 
 function playChime() {
@@ -721,6 +918,8 @@ function playChime() {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) return;
     const ctx = new AudioContextClass();
+    
+    // First chime (E5 - 659.25 Hz)
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     osc1.type = 'sine';
@@ -728,8 +927,13 @@ function playChime() {
     gain1.gain.setValueAtTime(0, ctx.currentTime);
     gain1.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.05);
     gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-    osc1.connect(gain1); gain1.connect(ctx.destination);
-    osc1.start(ctx.currentTime); osc1.stop(ctx.currentTime + 0.4);
+    
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.4);
+
+    // Second chime (A5 - 880.00 Hz) slightly delayed
     setTimeout(() => {
       const osc2 = ctx.createOscillator();
       const gain2 = ctx.createGain();
@@ -738,28 +942,41 @@ function playChime() {
       gain2.gain.setValueAtTime(0, ctx.currentTime);
       gain2.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.05);
       gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
-      osc2.connect(gain2); gain2.connect(ctx.destination);
-      osc2.start(ctx.currentTime); osc2.stop(ctx.currentTime + 0.5);
+      
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(ctx.currentTime);
+      osc2.stop(ctx.currentTime + 0.5);
     }, 150);
-  } catch (e) { console.warn("AudioContext chime failed:", e); }
+  } catch (e) {
+    console.warn("AudioContext chime failed:", e);
+  }
 }
 
 function updateTimerDisplay() {
   const mins = Math.floor(state.timer.remaining / 60);
   const secs = state.timer.remaining % 60;
+  
   const minsStr = mins.toString().padStart(2, '0');
   const secsStr = secs.toString().padStart(2, '0');
+  
+  // Inner HTML supports ticking colon
   const colonClass = (state.timer.isRunning && secs % 2 === 0) ? 'blink' : '';
   document.getElementById('timerDisplay').innerHTML = 
     `${minsStr}<span class="timer-colon ${colonClass}">:</span>${secsStr}`;
-  const circumference = 2 * Math.PI * 54;
+
+  // Update ring progress
+  const circumference = 2 * Math.PI * 54; // r=54
   const progress = state.timer.remaining / state.timer.duration;
   const offset = circumference * (1 - progress);
+  
   const progressRing = document.getElementById('timerProgress');
   if (progressRing) {
     progressRing.style.strokeDashoffset = offset;
     progressRing.classList.toggle('running', state.timer.isRunning);
   }
+
+  // Update document tab title status
   const modeLabel = state.timer.mode === 'focus' ? 'Focus' : 'Break';
   if (state.timer.isRunning) {
     document.title = `⏱️ ${minsStr}:${secsStr} (${modeLabel}) | FocusFlow`;
@@ -771,9 +988,12 @@ function updateTimerDisplay() {
 function renderTimerStats() {
   const todaySessions = getTodaySessions();
   const todayMinutes = todaySessions.reduce((sum, s) => sum + s.duration, 0);
+
   document.getElementById('timerTodaySessions').textContent = todaySessions.length;
   document.getElementById('timerTodayMinutes').textContent = `${todayMinutes}m`;
   document.getElementById('timerTotalSessions').textContent = state.sessions.length;
+
+  // Session list
   const sessionsList = document.getElementById('sessionsList');
   const recent = [...state.sessions].reverse().slice(0, 8);
   if (recent.length === 0) {
@@ -804,12 +1024,18 @@ function renderPlanner() {
   const weekDates = getWeekDates(state.weekOffset);
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const today = getDateString(new Date());
+
+  // Update week label
+  const startDate = weekDates[0];
+  const endDate = weekDates[6];
   document.getElementById('weekLabel').textContent =
-    `${formatDateShort(weekDates[0])} — ${formatDateShort(weekDates[6])}`;
+    `${formatDateShort(startDate)} — ${formatDateShort(endDate)}`;
+
   grid.innerHTML = weekDates.map((date, i) => {
     const dayEvents = state.events.filter(e => e.date === date).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
     const isToday = date === today;
     const dayNum = new Date(date).getDate();
+
     return `
       <div class="planner-day ${isToday ? 'today' : ''}">
         <div class="planner-day-header">
@@ -828,10 +1054,17 @@ function renderPlanner() {
       </div>
     `;
   }).join('');
-  renderExams(); renderTargets(); renderReminders();
+
+  // Render components
+  renderExams();
+  renderTargets();
+  renderReminders();
 }
 
-function changeWeek(direction) { state.weekOffset += direction; renderPlanner(); }
+function changeWeek(direction) {
+  state.weekOffset += direction;
+  renderPlanner();
+}
 
 function openEventModal() {
   document.getElementById('eventTitleInput').value = '';
@@ -854,17 +1087,34 @@ function addEvent() {
   const date = document.getElementById('eventDateInput').value;
   const time = document.getElementById('eventTimeInput').value;
   const type = document.getElementById('eventTypeInput').value;
-  if (!title || !date) { showToast('Please enter event title and date.', 'error'); return; }
-  const event = { id: generateId(), title, date, time, type, createdAt: Date.now() };
+
+  if (!title || !date) {
+    showToast('Please enter event title and date.', 'error');
+    return;
+  }
+
+  const event = {
+    id: generateId(),
+    title,
+    date,
+    time,
+    type,
+    createdAt: Date.now(),
+  };
+
   state.events.push(event);
-  persist(); trackActivity(); closeModal('eventModal'); renderPlanner();
+  persist();
+  trackActivity();
+  closeModal('eventModal');
+  renderPlanner();
   showToast('Event added to planner!', 'success');
 }
 
 function deleteEvent(id) {
   if (!confirm('Remove this event?')) return;
   state.events = state.events.filter(e => e.id !== id);
-  persist(); renderPlanner();
+  persist();
+  renderPlanner();
   showToast('Event removed.', 'info');
 }
 
@@ -873,20 +1123,38 @@ function deleteEvent(id) {
 function renderExams() {
   const listEl = document.getElementById('examsList');
   if (!listEl) return;
+
   if (!state.exams || state.exams.length === 0) {
     listEl.innerHTML = `<p class="dash-empty-text">No exams added yet</p>`;
     return;
   }
-  const today = new Date(); today.setHours(0, 0, 0, 0);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   listEl.innerHTML = state.exams.map(exam => {
     const examDate = new Date(exam.date + 'T00:00:00');
     const diffTime = examDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    let daysText = '', daysClass = 'upcoming';
-    if (diffDays < 0) { daysText = 'Completed'; daysClass = 'upcoming'; }
-    else if (diffDays === 0) { daysText = 'Today'; daysClass = 'urgent'; }
-    else if (diffDays === 1) { daysText = 'Tomorrow'; daysClass = 'urgent'; }
-    else { daysText = `In ${diffDays} days`; if (diffDays <= 3) daysClass = 'urgent'; }
+    
+    let daysText = '';
+    let daysClass = 'upcoming';
+    if (diffDays < 0) {
+      daysText = 'Completed';
+      daysClass = 'upcoming';
+    } else if (diffDays === 0) {
+      daysText = 'Today';
+      daysClass = 'urgent';
+    } else if (diffDays === 1) {
+      daysText = 'Tomorrow';
+      daysClass = 'urgent';
+    } else {
+      daysText = `In ${diffDays} days`;
+      if (diffDays <= 3) {
+        daysClass = 'urgent';
+      }
+    }
+
     return `
       <div class="exam-item">
         <div class="exam-header">
@@ -919,14 +1187,33 @@ function addExam() {
   const date = document.getElementById('examDateInput').value;
   const goal = parseInt(document.getElementById('examGoalInput').value);
   const autoSched = document.getElementById('examAutoSched').checked;
+
   if (!subject || !title || !date || isNaN(goal) || goal <= 0) {
-    showToast('Please fill all fields with valid values.', 'error'); return;
+    showToast('Please fill all fields with valid values.', 'error');
+    return;
   }
-  const exam = { id: generateId(), subject, title, date, goal, autoSched, createdAt: Date.now() };
+
+  const exam = {
+    id: generateId(),
+    subject,
+    title,
+    date,
+    goal,
+    autoSched,
+    createdAt: Date.now()
+  };
+
   if (!state.exams) state.exams = [];
   state.exams.push(exam);
-  if (autoSched) autoGenerateStudyPlan(exam);
-  persist(); trackActivity(); closeModal('examModal'); renderPlanner();
+
+  if (autoSched) {
+    autoGenerateStudyPlan(exam);
+  }
+
+  persist();
+  trackActivity();
+  closeModal('examModal');
+  renderPlanner();
   showToast('Exam goal created successfully!', 'success');
 }
 
@@ -934,7 +1221,8 @@ function deleteExam(id, event) {
   if (event) event.stopPropagation();
   if (!confirm('Remove this exam goal? (Note: Calendar events will remain)')) return;
   state.exams = state.exams.filter(e => e.id !== id);
-  persist(); renderPlanner();
+  persist();
+  renderPlanner();
   showToast('Exam goal removed.', 'info');
 }
 
@@ -942,18 +1230,53 @@ function autoGenerateStudyPlan(exam) {
   const todayStr = getDateString(new Date());
   const examDate = new Date(exam.date + 'T00:00:00');
   const today = new Date(todayStr + 'T00:00:00');
+  
   const diffTime = examDate.getTime() - today.getTime();
   const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-  state.events.push({ id: generateId(), title: `${exam.subject} Exam: ${exam.title}`, date: exam.date, time: '09:00', type: 'exam', createdAt: Date.now() });
+
+  // 1. Add the exam event itself on the exam date
+  const examEvent = {
+    id: generateId(),
+    title: `${exam.subject} Exam: ${exam.title}`,
+    date: exam.date,
+    time: '09:00',
+    type: 'exam',
+    createdAt: Date.now()
+  };
+  state.events.push(examEvent);
+
   if (diffDays <= 0) return;
+
+  // Let's iterate from today up to the day before the exam
   for (let i = 0; i < diffDays; i++) {
-    const current = new Date(today); current.setDate(today.getDate() + i);
+    const current = new Date(today);
+    current.setDate(today.getDate() + i);
     const dateStr = getDateString(current);
+
     const isDayBeforeExam = (i === diffDays - 1);
+
     if (isDayBeforeExam) {
-      state.events.push({ id: generateId(), title: `Review: ${exam.subject}`, date: dateStr, time: '15:00', type: 'review', createdAt: Date.now() });
+      // Add a review session
+      const reviewEvent = {
+        id: generateId(),
+        title: `Review: ${exam.subject}`,
+        date: dateStr,
+        time: '15:00',
+        type: 'review',
+        createdAt: Date.now()
+      };
+      state.events.push(reviewEvent);
     } else {
-      state.events.push({ id: generateId(), title: `Study: ${exam.subject} (${exam.title})`, date: dateStr, time: '16:00', type: 'study', createdAt: Date.now() });
+      // Add a study session
+      const studyEvent = {
+        id: generateId(),
+        title: `Study: ${exam.subject} (${exam.title})`,
+        date: dateStr,
+        time: '16:00',
+        type: 'study',
+        createdAt: Date.now()
+      };
+      state.events.push(studyEvent);
     }
   }
 }
@@ -961,10 +1284,12 @@ function autoGenerateStudyPlan(exam) {
 function renderTargets() {
   const listEl = document.getElementById('targetsList');
   if (!listEl) return;
+
   if (!state.targets || state.targets.length === 0) {
     listEl.innerHTML = `<p class="dash-empty-text">No targets tracked yet</p>`;
     return;
   }
+
   listEl.innerHTML = state.targets.map(target => {
     return `
       <div class="target-item ${target.completed ? 'completed' : ''}">
@@ -988,11 +1313,26 @@ function openTargetModal() {
 function addTarget() {
   const title = document.getElementById('targetTitleInput').value.trim();
   const category = document.getElementById('targetCategoryInput').value;
-  if (!title) { showToast('Please enter a target description.', 'error'); return; }
-  const target = { id: generateId(), title, category, completed: false, createdAt: Date.now() };
+
+  if (!title) {
+    showToast('Please enter a target description.', 'error');
+    return;
+  }
+
+  const target = {
+    id: generateId(),
+    title,
+    category,
+    completed: false,
+    createdAt: Date.now()
+  };
+
   if (!state.targets) state.targets = [];
   state.targets.push(target);
-  persist(); trackActivity(); closeModal('targetModal'); renderPlanner();
+  persist();
+  trackActivity();
+  closeModal('targetModal');
+  renderPlanner();
   showToast('Weekly target added!', 'success');
 }
 
@@ -1000,33 +1340,53 @@ function toggleTarget(id) {
   const target = state.targets.find(t => t.id === id);
   if (target) {
     target.completed = !target.completed;
-    persist(); trackActivity(); renderPlanner();
-    if (target.completed) showToast('Weekly target completed! 🎯', 'success');
+    persist();
+    trackActivity();
+    renderPlanner();
+    if (target.completed) {
+      showToast('Weekly target completed! 🎯', 'success');
+    }
   }
 }
 
 function deleteTarget(id) {
   state.targets = state.targets.filter(t => t.id !== id);
-  persist(); renderPlanner();
+  persist();
+  renderPlanner();
   showToast('Weekly target removed.', 'info');
 }
 
 function renderReminders() {
   const listEl = document.getElementById('remindersList');
   if (!listEl) return;
+
   const todayStr = getDateString(new Date());
+  
+  // Get all events from today onwards
   const upcomingEvents = state.events
     .filter(e => e.date >= todayStr)
-    .sort((a, b) => { if (a.date !== b.date) return a.date.localeCompare(b.date); return (a.time || '').localeCompare(b.time || ''); });
+    .sort((a, b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      return (a.time || '').localeCompare(b.time || '');
+    });
+
   if (upcomingEvents.length === 0) {
     listEl.innerHTML = `<p class="dash-empty-text">No reminders scheduled</p>`;
     return;
   }
-  const icons = { study: '📖', review: '🔁', exam: '📝', break: '☕' };
+
+  const icons = {
+    study: '📖',
+    review: '🔁',
+    exam: '📝',
+    break: '☕'
+  };
+
   listEl.innerHTML = upcomingEvents.slice(0, 8).map(event => {
     const icon = icons[event.type] || '🔔';
     const formattedDate = formatDate(event.date);
     const timeText = event.time ? `${formattedDate} at ${event.time}` : formattedDate;
+
     return `
       <div class="reminder-item ${event.type}">
         <span class="reminder-icon">${icon}</span>
@@ -1039,6 +1399,7 @@ function renderReminders() {
   }).join('');
 }
 
+// Expose functions globally
 window.openExamModal = openExamModal;
 window.addExam = addExam;
 window.deleteExam = deleteExam;
@@ -1049,15 +1410,24 @@ window.deleteTarget = deleteTarget;
 
 // ==================== MODALS ====================
 
-function openModal(id) { document.getElementById(id).classList.add('visible'); }
-function closeModal(id) { document.getElementById(id).classList.remove('visible'); }
+function openModal(id) {
+  document.getElementById(id).classList.add('visible');
+}
 
+function closeModal(id) {
+  document.getElementById(id).classList.remove('visible');
+}
+
+// Close modals on overlay click
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) overlay.classList.remove('visible');
+    if (e.target === overlay) {
+      overlay.classList.remove('visible');
+    }
   });
 });
 
+// Close modals on Escape
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     document.querySelectorAll('.modal-overlay.visible').forEach(m => m.classList.remove('visible'));
@@ -1070,9 +1440,12 @@ function showToast(message, type = 'info') {
   const container = document.getElementById('toastContainer');
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
+
   const icons = { success: '✓', error: '✕', info: 'ℹ' };
   toast.innerHTML = `<span>${icons[type] || 'ℹ'}</span> ${escapeHtml(message)}`;
+
   container.appendChild(toast);
+
   setTimeout(() => {
     toast.style.animation = 'toastOut 0.3s ease forwards';
     setTimeout(() => toast.remove(), 300);
@@ -1127,23 +1500,37 @@ function formatHours(minutes) {
 }
 
 function getCategoryColor(category) {
-  const map = { general: 'blue', study: 'purple', project: 'cyan', personal: 'amber' };
+  const map = {
+    general: 'blue',
+    study: 'purple',
+    project: 'cyan',
+    personal: 'amber',
+  };
   return map[category] || 'blue';
 }
 
 function getEventColor(type) {
-  const map = { study: 'primary', review: 'green', exam: 'rose', break: 'amber' };
+  const map = {
+    study: 'primary',
+    review: 'green',
+    exam: 'rose',
+    break: 'amber',
+  };
   return map[type] || 'primary';
 }
 
-function getThisWeekDates() { return getWeekDates(0); }
+function getThisWeekDates() {
+  return getWeekDates(0);
+}
 
 function getWeekDates(offset = 0) {
   const today = new Date();
   const dayOfWeek = today.getDay();
   const monday = new Date(today);
+  // Adjust to Monday (JS: 0=Sun, 1=Mon, ...)
   const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
   monday.setDate(today.getDate() + diff + (offset * 7));
+
   const dates = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
@@ -1162,6 +1549,8 @@ function renderSettings() {
   document.getElementById('settingsFocusTime').value = state.settings.timerPreset.focus;
   document.getElementById('settingsShortBreak').value = state.settings.timerPreset.short;
   document.getElementById('settingsLongBreak').value = state.settings.timerPreset.long;
+
+  // Set active theme option UI
   document.querySelectorAll('.theme-option').forEach(opt => {
     opt.classList.toggle('active', opt.dataset.theme === state.settings.theme);
   });
@@ -1170,19 +1559,28 @@ function renderSettings() {
 function saveProfileSettings() {
   const name = document.getElementById('settingsUsername').value.trim();
   const initials = document.getElementById('settingsInitials').value.trim();
-  if (!name) { showToast('Display Name is required.', 'error'); return; }
+
+  if (!name) {
+    showToast('Display Name is required.', 'error');
+    return;
+  }
+
   state.settings.user.name = name;
   state.settings.user.initials = initials || name.charAt(0).toUpperCase();
-  persist(); applyProfileChanges();
+  persist();
+  applyProfileChanges();
   showToast('Profile settings saved!', 'success');
 }
 
 function saveGoalSettings() {
   const goalInput = document.getElementById('settingsWeeklyGoal');
   const goalVal = parseInt(goalInput.value);
+
   if (isNaN(goalVal) || goalVal < 1 || goalVal > 168) {
-    showToast('Weekly goal must be between 1 and 168 hours.', 'error'); return;
+    showToast('Weekly goal must be between 1 and 168 hours.', 'error');
+    return;
   }
+
   state.settings.goals.weeklyStudyHours = goalVal;
   persist();
   showToast('Weekly goal saved!', 'success');
@@ -1192,37 +1590,53 @@ function saveTimerSettings() {
   const focusVal = parseInt(document.getElementById('settingsFocusTime').value);
   const shortVal = parseInt(document.getElementById('settingsShortBreak').value);
   const longVal = parseInt(document.getElementById('settingsLongBreak').value);
+
   if (isNaN(focusVal) || focusVal < 1 || isNaN(shortVal) || shortVal < 1 || isNaN(longVal) || longVal < 1) {
-    showToast('Timer durations must be valid positive numbers.', 'error'); return;
+    showToast('Timer durations must be valid positive numbers.', 'error');
+    return;
   }
+
   state.settings.timerPreset.focus = focusVal;
   state.settings.timerPreset.short = shortVal;
   state.settings.timerPreset.long = longVal;
   persist();
-  if (!state.timer.isRunning) resetTimer();
+
+  // If timer is not currently running, reset it with the new preset
+  if (!state.timer.isRunning) {
+    resetTimer();
+  }
+
   showToast('Timer presets saved!', 'success');
 }
 
 function selectTheme(themeName) {
   state.settings.theme = themeName;
-  persist(); applyTheme();
+  persist();
+  applyTheme();
+
+  // Update Settings page UI active option
   document.querySelectorAll('.theme-option').forEach(opt => {
     opt.classList.toggle('active', opt.dataset.theme === themeName);
   });
+  
   showToast(`${themeName.charAt(0).toUpperCase() + themeName.slice(1)} theme applied!`, 'success');
 }
 
 function applyTheme() {
   const root = document.documentElement;
   root.classList.remove('theme-emerald', 'theme-solar');
-  if (state.settings.theme === 'emerald') root.classList.add('theme-emerald');
-  else if (state.settings.theme === 'solar') root.classList.add('theme-solar');
+  if (state.settings.theme === 'emerald') {
+    root.classList.add('theme-emerald');
+  } else if (state.settings.theme === 'solar') {
+    root.classList.add('theme-solar');
+  }
 }
 
 function applyProfileChanges() {
   const avatar = document.getElementById('sidebarAvatar');
   const uname = document.getElementById('sidebarUsername');
   const greetingUname = document.getElementById('greetingUsername');
+
   if (avatar) avatar.textContent = state.settings.user.initials;
   if (uname) uname.textContent = state.settings.user.name;
   if (greetingUname) greetingUname.textContent = state.settings.user.name;
@@ -1230,29 +1644,38 @@ function applyProfileChanges() {
 
 function exportData() {
   const backup = {
-    tasks: state.tasks, habits: state.habits, events: state.events,
-    sessions: state.sessions, activity: state.activity, settings: state.settings,
-    exams: state.exams || [], targets: state.targets || [],
+    tasks: state.tasks,
+    habits: state.habits,
+    events: state.events,
+    sessions: state.sessions,
+    activity: state.activity,
+    settings: state.settings,
+    exams: state.exams || [],
+    targets: state.targets || [],
   };
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup));
   const downloadAnchor = document.createElement('a');
   downloadAnchor.setAttribute("href", dataStr);
   downloadAnchor.setAttribute("download", `focusflow_backup_${getDateString(new Date())}.json`);
   document.body.appendChild(downloadAnchor);
-  downloadAnchor.click(); downloadAnchor.remove();
+  downloadAnchor.click();
+  downloadAnchor.remove();
   showToast('Data exported successfully!', 'success');
 }
 
 function importData(event) {
   const file = event.target.files[0];
   if (!file) return;
+
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
       const importedState = JSON.parse(e.target.result);
       if (!importedState.tasks || !importedState.habits || !importedState.settings) {
-        showToast('Invalid backup file structure.', 'error'); return;
+        showToast('Invalid backup file structure.', 'error');
+        return;
       }
+
       state.tasks = importedState.tasks || [];
       state.habits = importedState.habits || [];
       state.events = importedState.events || [];
@@ -1267,29 +1690,54 @@ function importData(event) {
         theme: 'default',
         ...importedState.settings
       };
-      persist(); applyTheme(); applyProfileChanges(); resetTimer();
+
+      persist();
+      applyTheme();
+      applyProfileChanges();
+      
+      // Update timer to new focus preset
+      resetTimer();
+
+      // Refresh current view if applicable
       renderPage(state.currentPage);
+
       showToast('Data imported successfully!', 'success');
-    } catch (err) { showToast('Failed to parse backup JSON file.', 'error'); }
+    } catch (err) {
+      showToast('Failed to parse backup JSON file.', 'error');
+    }
   };
   reader.readAsText(file);
+  // Clear file input so same file can be uploaded again
   event.target.value = '';
 }
 
 function resetAllData() {
-  if (!confirm('Are you sure you want to delete all tasks, habits, study sessions, events, and restore default settings? This cannot be undone.')) return;
+  if (!confirm('Are you sure you want to delete all tasks, habits, study sessions, events, and restore default settings? This cannot be undone.')) {
+    return;
+  }
+
   localStorage.clear();
+
   state.tasks = [];
   state.habits = JSON.parse(JSON.stringify(defaultHabits));
-  state.events = []; state.sessions = []; state.activity = {};
-  state.exams = []; state.targets = [];
+  state.events = [];
+  state.sessions = [];
+  state.activity = {};
+  state.exams = [];
+  state.targets = [];
   state.settings = {
     user: { name: 'Student', initials: 'S' },
     goals: { weeklyStudyHours: 15 },
     timerPreset: { focus: 25, short: 5, long: 15 },
     theme: 'default',
   };
-  persist(); applyTheme(); applyProfileChanges(); resetTimer();
+
+  persist();
+  applyTheme();
+  applyProfileChanges();
+  resetTimer();
+
+  // Go to Dashboard
   navigateTo('dashboard');
   showToast('All app data has been reset to defaults.', 'info');
 }
@@ -1297,16 +1745,29 @@ function resetAllData() {
 // ==================== INITIALIZATION ====================
 
 function init() {
-  applyTheme(); applyProfileChanges();
+  // Apply loaded theme & profile
+  applyTheme();
+  applyProfileChanges();
+
+  // Set header date
   const now = new Date();
   document.getElementById('headerDate').textContent =
     now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+
+  // Set default due date to today
   document.getElementById('taskDueInput').value = getDateString(now);
   document.getElementById('eventDateInput').value = getDateString(now);
+
+  // Nav click handlers
   document.querySelectorAll('.nav-item[data-page]').forEach(item => {
     item.addEventListener('click', () => navigateTo(item.dataset.page));
   });
-  renderDashboard(); updateTimerDisplay(); updateTasksBadge();
+
+  // Render initial page
+  renderDashboard();
+  updateTimerDisplay();
+  updateTasksBadge();
 }
 
+// Boot
 document.addEventListener('DOMContentLoaded', init);
